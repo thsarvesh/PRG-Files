@@ -1,0 +1,931 @@
+******Genius Software(Punjab)******
+****Author Umesh Nath Goswami*****
+****Full Migration Program****start date->sep,1st,2021
+clos tables all
+set date  brit
+set cent on
+set dele on
+set safe off
+set cpdi off
+set color to
+set status off
+set talk off
+Sure = Space(4)
+sele sele(1)
+create curs mycurs  (setup c(50),value c(4))
+sele mycurs
+appe blank
+repl  setup with 'Item Wise Double Discount ',value with 'Y'
+appen blank
+repl  setup with 'Double Discount on ',value with 'B(Amount)'
+appen blank
+repl  setup with 'Ask Discount In Amount ',value with 'N'
+brow font 'Courier',16    nomodify
+clea
+if type('FINALCP')='U'
+firstdate=ctod('01/04/2025')
+lastdate =ctod('31/03/2026')
+datdev='d:\TRANSFER'
+datext='DBF'
+endi
+datatransferpath=substr('D:\MIGRATION_DATA\APR\GENIUS\DBF\'+space(100),1,100)
+datatransferext='dbf'
+old_3 = 'YES'
+old_4 = 'YES'
+old_5 = firstdate
+old_6=  lastdate
+mstatecode='03'
+yrcode=3
+softtype='Wholesale'
+scalc='2'
+pcalc='2'
+clear
+close data
+if type('FINALCP')#'U'
+rest screen from simple
+colofhed="Genius Data Import"
+set colo to &colouract
+=colofil(6,08,20,65,10)
+endi
+@08,10 say 'Genius Data Path   :' font 'courier',18 get datatransferpath   font 'courier',18
+@09,10 say 'Genius Data Ext.   :' font 'courier',18 get datatransferext   font 'courier',18
+@10,10 say 'With O/S           :' font 'courier',18 get old_3 pict '@^ YES,NO '  font 'courier',12
+@11,10 say 'Only Balance       :' font 'courier',18 get old_4 pict '@^ YES,NO '  font 'courier',12
+@12,10 say 'F.Y.Begin From     :' font 'courier',18 get old_5  font 'courier',18
+@13,10 say 'F.Y.Upto           :' font 'courier',18 get old_6  font 'courier',18
+@14,10 say 'Your State Code    :' font 'courier',18 get mstatecode font 'courier',18
+@15,10 say 'Year Code          :' font 'courier',18 get yrcode font 'courier',18
+@16,10 say 'Softtype           :' font 'Courier',18 get softtype pict '@m Wholesale,Retail   ,FMCG     '   font 'Courier',18
+@17,10 say 'Sale Calculation   :' font 'courier',18 get scalc font 'courier',18
+@18,10 say 'Purch Calculation  :' font 'courier',18 get pcalc font 'courier',18
+@19,10 say 'Type SURE          :' font 'courier',18 get sure pict '@x!' font 'courier',18
+read
+datatransferpath = alltrim(datatransferpath)
+datdev = alltrim(datdev)
+datext= alltrim(datext)
+if lastkey()=27 .and. sure#'SURE'
+ return
+endif
+clear
+if type('FINALCP')#'U'
+	=starttransfer()
+endif
+@02,22 say 'Please Wait Importing Genius Data Into Marg....' font 'Arial',14 colo 'W+/G'
+sele sele(1)
+use &datdev\pro.&datext
+zap
+use &datdev\order.&datext
+zap
+use &datdev\saletype.&datext
+zap
+use &datdev\gledger.&datext
+zap
+use &datdev\pendings.&datext
+zap
+use &datdev\pend.&datext
+zap
+use &datdev\probat.&datext
+zap
+use &datdev\maorder.&datext
+zap
+use &datdev\sborder.&datext
+zap
+use &datdev\mdis.&datext
+zap
+use &datdev\dis.&datext
+zap
+use &datdev\glmonth.&datext
+zap
+use &datdev\ggmonth.&datext
+zap
+use &datdev\saletype.&datext
+zap
+use &datdev\support.&datext
+zap
+clos table all
+rowno=6
+
+@rowno,10 say '**** Importing Product Details  ****' font 'Arial',12
+rowno=rowno+1
+sele sele(1)
+use &datatransferpath\ba_item alia fitm
+sele sele(1)
+use &datatransferpath\ba_tax alia ftax
+inde on tx_id to ftax
+sele sele(1)
+use &datatransferpath\ba_cat alia fcat
+inde on ca_id to fcat
+sele sele(1)
+use &datdev\pro.&datext alias mitm
+inde on name to mitm
+sele sele(1)
+use &datdev\saletype.&datext alias mpcm
+index on sgcode + sname + str(igst,5,2) to mpcm
+sele fitm
+go top
+scan
+ last= recno()
+ =seek(it_s_cat,'fcat')
+ =seek(it_stax_id,'ftax')
+ sele mitm
+ seek substr(fitm->it_code+spac(10),1,10)
+ if .not. foun()
+  append blank
+  repl code with last
+  repl name with fitm->it_code
+  repl product with fitm->it_name
+  repl packing with ''
+  repl billname with fitm->it_name
+  repl unit with 'PCS'
+  repl minimum with fitm->it_min
+  repl maximum with fitm->it_max
+  repl pack with 1
+  repl rackno with fitm->it_id
+  repl taxl with 'T'
+  repl taxc with 'T'
+  repl decimal with 'Y'
+  repl halfsche with 'A'
+  repl qtrsche with 'Y'
+  repl fixdis with 0
+  repl saltax with ftax->tx_sgst_p
+  repl cgst with saltax
+  repl igst with saltax+cgst
+  repl prate with 0
+  repl ratea with 0
+  repl rateb with 0
+  repl lprate with 0
+  repl mrp with 0
+  repl status with 'Y'
+ ****Hsn Transfer****
+   sele mpcm
+   seek 'COMMCD' + substr(fitm->it_hsn+spac(40),1,40)+str(mitm->igst,5,2) 
+   if !found()
+   append blank
+   repl sgcode with 'COMMCD'
+   repl scode  with alltrim(str(recno()))
+   repl sname  with fitm->it_hsn
+   repl parnam with sname
+   repl tax with mitm->saltax
+   repl cgst with mitm->cgst
+   repl igst with mitm->igst
+  endif
+  repl mitm->gcode6 with mpcm->scode
+ ****Category Transfer****
+   sele mpcm
+   seek 'CATEGO' + substr(fcat->ca_name+spac(40),1,40)
+   if !found()
+   append blank
+   repl sgcode with 'CATEGO'
+   repl scode  with 'C'+alltrim(str(last))
+   repl sname  with fcat->ca_name
+   repl parnam with sname
+  endif
+  repl mitm->gcode5 with mpcm->scode
+endi
+endsca
+close table all
+@rowno,10 say '**** Importing Opening Batch Details  ****' font 'Arial',12  &&umesh on 30/07/2025
+rowno=rowno+1
+sele sele(1)
+use &datatransferpath\ba_itbob alia fsbal
+inde on bo_it_id+bo_cf1 to fop
+sele sele(1)
+ use &datdev\pro.&datext alia mitm
+ index on rackno to mitm
+sele sele(1)
+ use &datdev\probat.&datext alia msbal
+ index on name + batchno to msbal
+sele fsbal
+go top
+scan
+=seek(fsbal->bo_it_id,'mitm')
+ sele msbal
+ seek mitm.name+subs(fsbal.bo_cf1+spac(12),1,12)
+ if !foun()
+ appen blan
+ repl code with mitm->code
+ repl name with mitm->name
+ repl billname with mitm->billname
+ repl product with mitm->product
+ repl pack with mitm->pack
+ repl packing with mitm->packing
+ repl unit2 with mitm->unit2
+ repl unit with mitm->unit
+ repl decimal with 'Y'
+ repl exp with fsbal->bo_df1
+ repl batchno with fsbal.bo_cf1
+ repl mrp with val(fsbal.bo_cf2)
+ repl misc1 with mitm->gcode
+ REPLACE opening WITH fsbal.bo_qty,;
+ 	      balance WITH fsbal.bo_qty,;
+ 	      o_a WITH fsbal.bo_qty,;
+ 	      b_a WITH fsbal.bo_qty
+ else
+ REPLACE opening WITH opening+fsbal.bo_qty,;
+ 	      balance WITH balance+fsbal.bo_qty,;
+ 	      o_a WITH o_a+fsbal.bo_qty,;
+ 	      b_a WITH b_a+fsbal.bo_qty
+ endi
+endscan
+clos tabl all
+
+
+@rowno,10 say '**** Importing Batch Details  ****' font 'Arial',12  &&umesh on 30/07/2025
+rowno=rowno+1
+sele sele(1)
+ use &datatransferpath\ba_tl alia fsbal
+sele sele(1)
+ use &datatransferpath\ba_itbob alia fop
+ inde on bo_it_id+bo_cf1 to fop
+sele sele(1)
+ use &datatransferpath\ba_tm alia fhd
+ inde on tm_id to fhd
+ update fsbal set tl_recon=fhd.tm_vrid from fhd inner join fsbal on fsbal.tl_id=fhd.tm_id
+sele sele(1)
+ use &datdev\pro.&datext alia mitm
+ index on rackno to mitm
+sele sele(1)
+ use &datdev\probat.&datext alia msbal
+ index on name + batchno to msbal
+sele fsbal
+go top
+scan
+=seek(fsbal.tl_id,'fhd')
+=seek(fsbal->tl_itemid,'mitm')
+ sele msbal
+ seek mitm.name+subs(fsbal.tl_b_cf1+spac(12),1,12)
+ if !foun()
+ appen blan
+ repl code with mitm->code
+ repl name with mitm->name
+ repl billname with mitm->billname
+ repl product with mitm->product
+ repl pack with mitm->pack
+ repl packing with mitm->packing
+ repl unit2 with mitm->unit2
+ repl unit with mitm->unit
+ repl decimal with 'Y'
+ repl exp with ctod('30/'+subs(fsbal->tl_b_cf2,1,3)+'20'+subs(fsbal->tl_b_cf2,4,2))
+ repl exp with fsbal->tl_b_df1
+ repl batchno with fsbal.tl_b_cf1
+ repl prate with iif(fsbal.tl_recon=5,fsbal.tl_rate,0)
+ repl ratea with iif(fsbal.tl_recon=1,fsbal.tl_rate,0)
+ repl mrp with fsbal->tl_b_mrp
+ repl supcode with ''
+ repl supinvo with ''
+ repl supdat with ctod('')
+ repl misc1 with mitm->gcode
+	 if inlist(fhd.tm_vrid,14,15)
+		 REPLACE opening WITH fsbal.tl_qty,;
+		 	      balance WITH fsbal.tl_qty,;
+		 	      o_a WITH fsbal.tl_qty,;
+		 	      b_a WITH fsbal.tl_qty
+		 repl prate with fsbal.tl_rate	      
+	 else
+		 REPLACE opening WITH -fsbal.tl_qty,;
+		 	      balance WITH -fsbal.tl_qty,;
+		 	      o_a WITH -fsbal.tl_qty,;
+		 	      b_a WITH -fsbal.tl_qty
+	 endif
+ else
+	 if inlist(fhd.tm_vrid,14,15)
+		 REPLACE opening WITH opening+fsbal.tl_qty,;
+		 	      balance WITH balance+fsbal.tl_qty,;
+		 	      o_a WITH o_a+fsbal.tl_qty,;
+		 	      b_a WITH b_a+fsbal.tl_qty
+		 repl prate with fsbal.tl_rate
+	 else
+		 REPLACE opening WITH opening-fsbal.tl_qty,;
+		 	      balance WITH balance-fsbal.tl_qty,;
+		 	      o_a WITH o_a-fsbal.tl_qty,;
+		 	      b_a WITH b_a-fsbal.tl_qty
+	 endif
+*!*	 repl prate with iif(fsbal.tl_recon=5,fsbal.tl_rate,0)
+*!*	 repl ratea with iif(fsbal.tl_recon=1,fsbal.tl_rate,0)
+	 repl mrp with val(fsbal->tl_b_cf2)
+ endi
+*!*	sele fop
+*!*	seek fsbal.tl_itemid+fsbal.tl_b_cf1
+endscan
+update msbal set opening=0,balance=0,b_a=0,o_a=0 where opening<0
+clos tabl all
+
+@rowno,10 say '**** Importing Account Master****' font 'Arial',12
+rowno=rowno+1
+sele sele(1)
+use &datatransferpath\ba_acs alia fact
+sele sele(1)
+use &datatransferpath\ba_city alia fct
+inde on ct_id to fct
+sele sele(1)
+use &datatransferpath\ba_acob alia fopn
+set filter to ob_year=yrcode
+inde on ob_acid to fopn
+sele sele(1)
+use &datatransferpath\ba_accb alia fbal
+set filter to cb_year=yrcode
+inde on cb_acid to fbal
+sele sele(1)
+use &datdev\order.&datext alia mact
+sele sele(1)
+use &datdev\support.&datext alias support
+index on aliase + str(sno,3) + lcode to support
+sele fact
+go top
+store spac(2)to acgrp
+scan
+=seek(fact->ac_id,'fopn')
+=seek(fact->ac_id,'fbal')
+=seek(fact->ac_ocity,'fct')
+ last=recno()
+ sele mact
+ append blank
+ do case
+ case inlis(fact->ac_anx,8,16,1) 
+  acgrp='C6'
+ case inlis(fact->ac_anx,9,15,2) 
+  acgrp='D31'
+ case inlis(fact->ac_anx,10) 
+  acgrp='C1'
+ otherwise
+ acgrp='J12' 
+ endca
+ repl scode with acgrp
+ repl rate with 'Y'
+ repl fax1 with fact->ac_ofax
+ repl fax2 with fact->ac_id
+ repl ordno with alltr(str(recno()))
+ repl parnam with fact->ac_name
+ repl mailnam with parnam
+ repl paradd with fact->ac_oadd1
+ repl paradd1 with fact->ac_oadd2
+ repl paradd2 with ''
+ repl city with fct->ct_name
+ repl dsm with fact->ac_pincode
+ repl itno with fact->ac_pan 
+ repl confir with ''
+ repl sthed with  'TIN No.'
+* repl stno with fact->ac_lstno
+ repl csthed with  'CST No.'
+* repl cstno with fact->ac_cstno
+ repl phone1 with fact->ac_person
+ repl phone2 with fact->ac_otel
+ repl phone4 with fact->ac_mobile
+ repl dlno with fact->ac_cudf1+' '+fact->ac_cudf2
+ repl gsthed with 'GST  No.'
+ repl gstno with fact->ac_gstin
+ repl rout with ''
+ repl area with ''
+ repl mr with ''
+ repl trans with ''
+ repl docu with ''
+ repl csthed with 'CST  No.'
+ repl ref with 'Mr.'
+ repl price with 'A'
+ repl status with 'Y'
+ repl adhed with 'Discount'
+ repl opning with fopn->ob_amount
+****Ledger Difference****
+ sele support
+ appe blank
+ repl type with "#",aliase with "DAT/F-LD",lcode with mact->ordno,value with 0
+*** for state code ***
+ sele support
+ seek 'ORDER   ' + '  7' +  mact->ordno
+ append blank
+ repl aliase with 'ORDER   '
+ repl type with 'F'
+ repl lcode with mact->ordno
+ repl sno with 7
+ repl pcode with 15
+ repl remark with subs(remark,1,32)+'DEF'+iif(subs(mact->gstno,1,2)='  ',mstatecode,subs(mact->gstno,1,2))+'                                           '
+**** For Email & Registered/Unregistered
+ sele support
+ append blank
+ repl aliase with 'ORDER   '
+ repl type with 'F'
+ repl lcode with mact->ordno
+ repl sno with 12
+ repl remark with substr(fact->ac_email,1,40)+substr(support->remark,41,100),;
+  heading with substr(heading,1,21)+iif(empty(mact->gstno),'UG','NG')
+endsc
+close table all
+
+if old_4='N'
+ do import_transactions
+endif
+
+proc import_transactions
+@rowno,10 say '**** Importing Inventory Transactions  ****' font 'Arial',12
+rowno=rowno+1
+sele select(1)                         && *****support file*********
+use &datdev\support.&datext alias support
+index on type+aliase to  support
+seek 'F' + 'BATCHPRT'
+if !found()
+ append blank
+ repl type with 'F',;
+  aliase with 'BATCHPRT'
+endif
+repl remark with substr(remark,1,57)+dtoc(date())+substr(remark,68)
+sele sele(1)
+use &datdev\pro.&datext alias pro      &&&Product Master
+index on rackno to pro
+sele sele(1)
+use &datdev\order.&datext alia ord     &&Account Master
+inde on fax2 to ord
+sele sele(1)
+use &datdev\dis.&datext alias dis      &&&Dis
+index on name to dis
+sele sele(1)
+use &datdev\mdis.&datext alias mdis    &&Mdis
+sele sele(1)
+use &datdev\probat.&datext alias prb   &&probat
+index on name+batchno to prb
+sele sele(1)                           &&slip no
+use &datdev\slipno.&datext alias mslip
+go top
+last4  = voucher + 10
+slast5 = svoucher + 10
+last4 = last4 + 20
+sele sele(1)
+use &datatransferpath\ba_tm alia sal
+sele sele(1)
+use &datatransferpath\ba_tl alia sld
+index on tl_id to sld
+sele sal
+set filter to betwe(tm_date,firstdate,lastdate)
+go top
+do whil !eof()
+ l3=sal->tm_billno
+ =seek(substr(sal->tm_acid,1,12),'ord')
+ sele mdis
+ appen blan
+ repl misc3 with substr(misc3,1,53)+'T'+substr(misc3,55,100)
+ repl codep with ord->ordno
+ repl voucher with last4
+ last4=last4+5
+ repl amountp with sal->tm_billamt
+ repl final with sal->tm_billamt
+ repl round with sal->tm_roff
+ if final=0 .and. cash#0
+  repl misc3 with substr(misc3,1,34)+'C'+substr(misc3,36,100)
+ else
+  repl misc3 with substr(misc3,1,34)+'R'+substr(misc3,36,100)
+ endif
+ repl rout with ''
+ repl area with ''
+ repl mr with ''
+ repl sale with 'Z'
+ repl account with 'N'
+ repl godwon with 'A'
+ repl discafter with 'M'
+ do case
+****Purchase Bills ****
+ case inlist(sal->tm_vrid,14)
+  repl type with 'P'
+  repl ltype with pcalc
+  repl vcn with alltr(str(sal->tm_no))
+  repl date with sal->tm_date
+  repl lrda with sal->tm_billdt
+  repl pm with sal->tm_billno
+  ****Sale Bills ****
+ case inlist(sal->tm_vrid,11)
+  repl type with 'S'
+  repl ltype with scalc
+  repl vcn with alltr(str(sal->tm_no))
+  repl date with sal->tm_date
+  repl lrda with sal->tm_billdt
+  repl pm with sal->tm_billno
+  ****Purchase Return****
+ case inlist(sal->tm_vrid,17,16)        
+  repl vcn with alltr(str(sal->tm_no))
+  repl date with sal->tm_date
+  repl lrda with sal->tm_billdt
+  repl pm with sal->tm_billno
+  repl type with 'B'
+  repl ltype with pcalc
+ ****Sales Return****
+  case inlist(sal->tm_vrid,15)  
+  repl type with 'R'
+  repl ltype with scalc
+  repl vcn with alltr(str(sal->tm_no))
+  repl date with sal->tm_date
+  repl lrda with sal->tm_billdt
+  repl pm with sal->tm_billno
+ endcase
+****Local Central*****
+ isigst=0
+ if substr(ord->gstno,1,2)#mstatecode and len(alltrim(ord->gstno))>10
+  repl misc3 with substr(misc3,1,64)+'C'+substr(misc3,66)
+  isigst=1
+ endi
+  sele support
+ appe blank
+ repl type with "#",aliase with "DAT/F-SL",pcode with mdis->voucher,value with mdis->final+mdis->cash
+ sele sld
+ seek sal->tm_id
+ do while tl_id=sal->tm_id .and. !eof()
+  last=subs(sld->tl_itemid+spac(20),1,20)
+  sele pro
+  seek last
+  sele dis
+  appen blan
+  repl codep with mdis->codep
+  repl vcn with iif(empty(mdis->vcn),mdis->challan,mdis->vcn)
+  repl date with iif(empty(mdis->date),mdis->chdate,mdis->date)
+  repl voucher with mdis->voucher
+  repl code with pro->code
+  repl batch with sld->tl_b_cf1&&tl_batch
+  repl exp with sld->tl_b_df1&&bdate
+  repl pack with 1
+  repl rate with sld->tl_rate
+  repl qty with sld->tl_qty
+  if qty=0 and rate=0 and sld->tl_amount#0
+  repl qty with 1
+  repl rate with sld->tl_amount
+  endi
+  repl free with 0
+*  repl disc1 with sld->tl_d1p
+ * repl disc2 with sld->tl_d2p
+  repl svdis with sld->tl_namt_f1
+  repl misc4 with subs(misc4,1,43)+'L'+subs(misc4,45)
+  repl rout with ''
+  repl area with ''
+  repl flg with iif(mdis->type='S','G',mdis->type)
+*  repl mrp with 0
+if isigst=1
+   repl ssta with sld->tl_nper_f2
+   else 
+   repl ssta with sld->tl_nper_f3
+   if empty(ssta) and sld->tl_nper_f2#0
+   repl ssta with sld->tl_nper_f2/2
+   endi
+   repl cgst with ssta
+   
+endi
+  repl half with 'A'
+  repl godwon with mdis->godwon
+  sele sld
+  skip
+endd
+sele sal
+skip
+endd
+clos table all
+
+*!*	@rowno,10 say '**** Importing Batch Opening Stock ****' font 'Arial',12
+*!*	rowno=rowno+1
+*!*	Sele Sele(1)
+*!*	Use datdev + '\probat.'+datext Alias prb
+*!*	Inde On batchno+Str(Code) To prb Uniq
+
+*!*	Sele Sele(1)
+*!*	Selec * From prb Into Curso bprb Readwr
+*!*	Inde On batchno+Str(Code) To bprb
+
+*!*	Sele Sele(1)
+*!*	Use datdev + '\dis.'+datext Alias dis
+*!*	Inde On Batch+Str(Code) To dis
+*!*	Sele prb
+*!*	Go Top
+*!*	Scan
+*!*		Sele bprb
+*!*		Seek prb->batchno+Str(prb->Code)
+
+*!*		Sum qty To mbalance While batchno+Str(Code)=prb.batchno+Str(prb.Code)
+*!*		Store 0 To xin,xin1,xout,xout1,xout2
+*!*		Sele dis
+*!*		Seek prb->batchno+Str(prb->Code)
+*!*		Scan While Batch+Str(Code)=prb.batchno+Str(prb.Code)
+*!*			If dis.flg = 'P'
+*!*				xin = xin +(dis.qty) + (dis.Free)
+*!*			Else
+*!*				If dis.flg = 'R'
+*!*					xin1 = xin1 +(dis.qty) + (dis.Free)
+*!*				Else
+*!*					If dis.flg = 'G'
+*!*						xout = xout +(dis.qty) + (dis.Free)
+*!*					Else
+*!*						If dis.flg = 'B'
+*!*							xout1 = xout1 +(dis.qty) + (dis.Free)
+*!*	                         Else
+*!*						         If dis.flg = 'O'
+*!*							         xout2 = xout2 +(dis.qty) + (dis.Free)
+*!*	                       endi
+*!*						Endi
+*!*					Endi
+*!*				Endif
+*!*			Endif
+*!*		Endsc
+*!*		mopening=mbalance+xout+xout1+xout2-(xin+xin1)
+*!*		Sele prb
+*!*		Repl prb->opening With mopening
+*!*		Repl prb->o_a With mopening
+*!*	Endsc
+*!*	Clos Tables All
+
+
+@rowno,10 say '**** Importing Account From Sales  ****' font 'Arial',12
+rowno=rowno+1
+af     =datdev + '\gledger.'+datext
+pend   =datdev + '\pend.'+datext
+mdis   =datdev + '\mdis.'+datext
+pending=datdev + '\pendings.'+datext
+Sele g
+Use &pending Alias pending
+Sele F
+Use &pend Alias pend Excl
+Zap
+Sele b
+Use &af Alias gledger Excl
+Zap
+Sele Sele(1)
+Use &datdev\Order.&datext Alias ord
+Index On ordno To ord
+Sele d
+Use &mdis Alias mdis
+Sele Sele(1)
+Use &datdev\slipno.&datext Alias mslip
+Go Top
+msvoucher=svoucher+5
+slast5=msvoucher
+Sele d
+Go Top
+Do While .Not. Eof()
+ =Seek(mdis.Codep,'ord')
+ Sele d
+ If vcn=Space(12)
+  Skip
+  Loop
+ Endif
+ last1=mdis.Codep
+ If mdis.Final#0
+  Sele b
+  Appe Blank
+  Repl voucher With mdis.voucher
+  If d.Type='P'
+   Repl Cd With 'C'
+   Repl credit With mdis.Final
+   Repl book With 'A'
+  Else
+   Repl Cd With 'D'
+   Repl debit With mdis.Final
+   Repl book With 'S'
+  Endif
+  Repl Date With mdis.Date
+  Repl Code With mdis.Codep
+  last1=mdis.Codep
+  Repl remark1 With mdis.vcn
+  Repl Type With 'Y'
+  If mdis.salun=Space(6)
+   Repl code1 With 'SP#20 '
+  Else
+   Repl code1 With mdis.salun
+  Endif
+  Repl gcode With ord.scode
+**** for outstanding
+  If old_3='Y'
+   Sele F
+   Appe Blank
+   Repl ord With mdis.Codep
+   Repl ddate With mdis.Date
+   Repl duedays With mdis.duedays
+   Repl vcn With mdis.vcn
+   If d.Type='P'
+    Repl Final With -mdis.Final
+   Else
+    Repl Final With mdis.Final
+   Endif
+   Repl Type With 'N'
+   Repl voucher With mdis.voucher
+   Repl adjvoucher With mdis.voucher
+   Repl svoucher With slast5
+   slast5=slast5+5
+   Sele g
+   Appe Blank
+   Repl ord With F.ord
+   Repl ddate With F.ddate
+   Repl vcn With F.vcn
+   Repl invtype With 'I'
+   Repl voucher With F.voucher
+   Repl duedays With F.duedays
+   Repl duedate With ddate+duedays
+   Repl Final With F.Final
+   Repl balance With F.Final
+   Repl svoucher With F.svoucher
+   Repl Name With mdis.remark4
+   Repl acgroup With ord.scode
+  Endif
+ Endif
+ If mdis.cash#0
+  Sele b
+  Appe Blank
+  Repl voucher With mdis.voucher
+  If d.Type='P'
+   Repl Cd With 'C'
+   Repl credit With mdis.cash
+  Else
+   Repl Cd With 'D'
+   Repl debit With mdis.cash
+  Endif
+  Repl Date With mdis.Date
+  Repl Code With 'STACO3'
+  last1='STACO3'
+  Repl remark1 With mdis.vcn
+  Repl book With 'S'
+  Repl Type With 'Y'
+  If mdis.salun=Space(6)
+   Repl code1 With 'SP#20 '
+  Else
+   Repl code1 With mdis.salun
+  Endif
+ Endif
+ If (mdis.Final+mdis.cash)#0
+  Sele b
+  Appe Blank
+  Repl voucher With mdis.voucher
+  If d.Type#'P'
+   Repl Cd With 'C'
+   Repl credit With (mdis.Final+mdis.cash)
+  Else
+   Repl Cd With 'D'
+   Repl debit With (mdis.Final+mdis.cash)
+  Endif
+  Repl Date With mdis.Date
+  If mdis.salun=Space(6)
+   Repl Code With 'SP#20 '
+  Else
+   Repl Code With mdis.salun
+  Endif
+  Repl remark1 With mdis.vcn
+  Repl book With 'S'
+  Repl Type With 'Y'
+  Repl code1 With last1
+ Endif
+ Sele gledger
+ Sele d
+ Skip
+Enddo
+Sele gledger
+Sele mslip
+Repl svoucher With msvoucher
+clos tabl all
+
+@rowno,10 say '**** Importing Account Vouchers Bank  ****' font 'Arial',12
+rowno=rowno+1
+sele sele(1)
+use &datdev\pendings.&datext alias pending
+index on ord + substr(vcn,1,12) to rou2
+last4  = last4 + 10
+slast5 = slast5 + 10
+sele sele(1)
+use &datdev\order.&datext alias ord
+inde on fax2 to ord
+sele sele(1)
+sele * from ord into curs ford readw
+inde on fax2 to ford
+sele sele(1)
+use &datdev\pend.&datext alias pend
+sele sele(1)
+use &datdev\gledger.&datext alias gledger
+sele sele(1)
+use &datatransferpath\ba_gl alias led
+set filter to betwe(gl_date,firstdate,lastdate) and gl_vr_id=-3 and gl_hide=.t.
+inde on gl_id to led
+go top
+tf_date=date()
+do while ! eof()
+ last4 = last4+4
+=seek(substr(led->gl_rel_ac,1,12),'ord')
+=seek(substr(led->gl_acid,1,12),'ford')
+ if led->gl_date>tf_date
+    skip 
+    loop 
+ endi   
+ sele gledger
+ append blank
+ repl voucher with last4
+ if led->gl_drcr>0
+ repl cd with 'C'
+ repl credit with abs(led->gl_drcr)
+ repl book with 'R'
+ else
+ repl cd with 'D'
+ repl debit with abs(led->gl_drcr)
+ repl book with 'P'
+ endi 
+ repl vcsno with alltr(str(led->gl_sno))
+ repl date with led->gl_date
+ repl code with ord->ordno
+ repl code1 with ford->ordno
+ repl remark1 with led->gl_memo
+ repl remark2 WITH ''
+***Double Entry
+ sele gledger
+ append blank
+ repl voucher with last4
+ if led->gl_drcr>0
+ repl cd with 'D'
+ repl debit with abs(led->gl_drcr)
+ repl book with 'R'
+ else
+ repl cd with 'C'
+ repl credit with abs(led->gl_drcr)
+ repl book with 'P'
+ endi 
+ repl vcsno with alltr(str(led->gl_sno))
+ repl date with led->gl_date
+ repl code1 with ord->ordno
+ repl code with ford->ordno
+ repl remark1 with led->gl_memo
+ repl remark2 with ''
+    last4  = last4 + 10
+	slast5 = slast5 + 10
+ sele led
+ skip
+enddo
+close tabl all
+
+@rowno,10 say '**** Importing Account Vouchers Cash  ****' font 'Arial',12
+rowno=rowno+1
+sele sele(1)
+use &datdev\pendings.&datext alias pending
+index on ord + substr(vcn,1,12) to rou2
+last4  = last4 + 10
+slast5 = slast5 + 10
+sele sele(1)
+use &datdev\order.&datext alias ord
+inde on fax2 to ord
+sele sele(1)
+use &datdev\pend.&datext alias pend
+sele sele(1)
+use &datdev\gledger.&datext alias gledger
+sele sele(1)
+use &datatransferpath\ba_gl alias led
+set filter to betwe(gl_date,firstdate,lastdate) and gl_vr_id=-2
+inde on gl_id to led
+go top
+tf_date=date()
+do while ! eof()
+ last4 = last4+4
+=seek(substr(led->gl_acid,1,12),'ord')
+ if led->gl_date>tf_date
+    skip 
+    loop 
+ endi   
+ sele gledger
+ append blank
+ repl voucher with last4
+ if ord->scode='C6'
+ repl cd with 'C'
+ repl credit with abs(led->gl_drcr)
+ repl book with 'R'
+ else
+ repl cd with 'D'
+ repl debit with abs(led->gl_drcr)
+ repl book with 'P'
+ endi 
+ repl vcsno with alltr(str(led->gl_sno))
+ repl date with led->gl_date
+ repl code with ord->ordno
+ repl remark1 with led->gl_memo
+ repl remark2 WITH ''
+***Double Entry
+ sele gledger
+ append blank
+ repl voucher with last4
+ if ord->scode='C6'
+ repl cd with 'D'
+ repl debit with abs(led->gl_drcr)
+ repl book with 'R'
+ else
+ repl cd with 'C'
+ repl credit with abs(led->gl_drcr)
+ repl book with 'P'
+ endi 
+ repl vcsno with alltr(str(led->gl_sno))
+ repl date with led->gl_date
+ repl code with 'STACO3'
+ repl remark1 with led->gl_memo
+ repl remark2 WITH ''
+    last4  = last4 + 10
+	slast5 = slast5 + 10
+ sele led
+ skip
+enddo
+close tabl all
+
+proc rem_null
+a = afields(arr)
+for imarg = 1 to a
+ mfldname = arr(imarg, 1)
+ do case
+ case inlist(arr(imarg,2), "C","V","M")
+  replace all &mfldname with '' for isnull(&mfldname)
+ case inlist(arr(imarg,2), "B","N","I","F","Y","M")
+  replace all &mfldname with 0 for isnull(&mfldname)
+ case inlist(arr(imarg,2), "D","T","M")
+  replace all &mfldname with ctod('') for isnull(&mfldname)
+ endcase
+endfor
