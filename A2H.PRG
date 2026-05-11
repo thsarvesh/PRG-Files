@@ -103,7 +103,6 @@ if removenull='Y'
 			do rem_null
 		endif
 	next
-
 endif
 close data
 
